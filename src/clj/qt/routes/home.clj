@@ -25,6 +25,22 @@
            (map #(if (= (:id item) (:id %)) (assoc % :busy status) %)
                 cars_arr))))
 
+(defn mark-latitude
+"Marks latitude for a car as true or false as define dby the latitude variable"
+ [item latitude]
+  (swap! cars
+         (fn [cars_arr]
+           (map #(if (= (:id item) (:id %)) (assoc % :lat latitude) %)
+                cars_arr))))
+
+(defn mark-longitude
+"Marks longitude for a car as true or false as define dby the longitude variable"
+ [item longitude]
+  (swap! cars
+         (fn [cars_arr]
+           (map #(if (= (:id item) (:id %)) (assoc % :lng longitude) %)
+                cars_arr))))
+
 (defn get-car [x] (filter #(= x (:color %)) @cars))
 
 (defn distance 
@@ -46,34 +62,40 @@
 (defn end-trip 
   "Ends trip for a car identified by id"
  [request]
+ (try
   (let [{:keys [id type lat lng uid]} (-> request :params)
         free-taxi (first (filter #(= (Integer/parseInt id) (:id %)) @cars))
+        lat-data (mark-latitude free-taxi (Integer/parseInt lat))
+        lng-data (mark-longitude free-taxi (Integer/parseInt lng))
         resp-data (mark-status free-taxi false)]
-    (println (str "Free taxi" free-taxi))
+    (println (str "Free taxi -> " free-taxi))
     (println (json/write-str resp-data))
 
     (-> (response/ok (json/write-str resp-data))
-        (response/header "Content-Type" "text/plain; charset=utf-8"))))
+        (response/header "Content-Type" "text/plain; charset=utf-8")))
+(catch Exception e (str "caught exception: " (.getMessage e)))))
 
 (defn book-trip 
   "Books a free taxi depending, if a hispter only pink car will be booked" 
   [request]
-  (let [{:keys [id type lat lng uid]} (-> request :params)
-        free-cars (distance {:id id
-                                  :type type
-                                  :uid uid
-                                  :lng (Integer/parseInt lng)
-                                  :lat (Integer/parseInt lat)})
-        taxi-booked (first free-cars)
-        current-list (mark-status taxi-booked true)
-        resp-data (if (= 0 (count free-cars))
-                    {:status "SUCCESS" :data "No cars"}
-                    {:status "SUCCESS" :data taxi-booked})]
-    (println resp-data)
-    (println (json/write-str resp-data))
+  (try
+    (let [{:keys [id type lat lng uid]} (-> request :params)
+          free-cars (distance {:id id
+                                    :type type
+                                    :uid uid
+                                    :lng (Integer/parseInt lng)
+                                    :lat (Integer/parseInt lat)})
+          taxi-booked (first free-cars)
+          current-list (mark-status taxi-booked true)
+          resp-data (if (= 0 (count free-cars))
+                      {:status "SUCCESS" :data "No cars"}
+                      {:status "SUCCESS" :data taxi-booked})]
+      (println resp-data)
+      (println (json/write-str resp-data))
 
-    (-> (response/ok (json/write-str resp-data))
-        (response/header "Content-Type" "text/plain; charset=utf-8"))))
+      (-> (response/ok (json/write-str resp-data))
+          (response/header "Content-Type" "text/plain; charset=utf-8")))
+    (catch Exception e (str "caught exception: " (.getMessage e)))))
 
 (defn home-routes []
   [""

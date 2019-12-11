@@ -48,7 +48,7 @@
     (is (= (:status response) 200))))
 
   (testing "Test GET request to any other user response with a list of available cars"
-  (let [response ((app) (request :get  "/endtrip?id=3&lat=13&lng=3&type=other"))
+  (let [response ((app) (request :get  "/endtrip?id=3&lat=13&lng=3&type=hipster"))
         body     (:body response)]
     (is (= (:status response) 200))))
 
