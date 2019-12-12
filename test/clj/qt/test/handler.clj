@@ -32,6 +32,11 @@
         body     (:body response)]
     (is (= (:status response) 200))))
 
+  (testing "Test GET request to list of available cars"
+  (let [response ((app) (request :get  "/listtaxis"))
+        body     (:body response)]
+    (is (= (:status response) 200))))
+
   (testing "Test Booking for Hipster returns expected response for pink cars"
   (let [response ((app) (request :get  "/booktrip?uid=abc&lat=23&lng=22&type=hipster"))
         body     (:body response)]

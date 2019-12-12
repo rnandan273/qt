@@ -59,6 +59,18 @@
 (defn home-page [request]
   (layout/render request "home.html"))
 
+(defn list-taxis
+  "List taxis available"
+ [request]
+ (try
+  (let [{:keys [id type lat lng uid]} (-> request :params)
+        resp-data {:status "SUCCESS" :data (filter #(= false (:busy %)) @cars)}]
+    (println (json/write-str resp-data))
+
+    (-> (response/ok (json/write-str resp-data))
+        (response/header "Content-Type" "text/plain; charset=utf-8")))
+  (catch Exception e (str "caught exception: " (.getMessage e)))))
+
 (defn end-trip 
   "Ends trip for a car identified by id"
  [request]
@@ -67,13 +79,13 @@
         free-taxi (first (filter #(= (Integer/parseInt id) (:id %)) @cars))
         lat-data (mark-latitude free-taxi (Integer/parseInt lat))
         lng-data (mark-longitude free-taxi (Integer/parseInt lng))
-        resp-data (mark-status free-taxi false)]
+        resp-data {:status "SUCCESS" :data (mark-status free-taxi false)}]
     (println (str "Free taxi -> " free-taxi))
     (println (json/write-str resp-data))
 
     (-> (response/ok (json/write-str resp-data))
         (response/header "Content-Type" "text/plain; charset=utf-8")))
-(catch Exception e (str "caught exception: " (.getMessage e)))))
+  (catch Exception e (str "caught exception: " (.getMessage e)))))
 
 (defn book-trip 
   "Books a free taxi depending, if a hispter only pink car will be booked" 
@@ -104,6 +116,7 @@
    ["/" {:get home-page}]
    ["/booktrip" {:get book-trip}]
    ["/endtrip" {:get end-trip}]
+   ["/listtaxis" {:get list-taxis}]
    ["/docs" {:get (fn [_]
                     (-> (response/ok (-> "docs/docs.md" io/resource slurp))
                         (response/header "Content-Type" "text/plain; charset=utf-8")))}]])
